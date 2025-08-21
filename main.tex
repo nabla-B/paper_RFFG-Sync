@@ -1,0 +1,263 @@
+\documentclass[11pt]{article}
+
+% -------- arXiv-friendly packages --------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}        % better font
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage[english]{babel}
+\usepackage[autostyle=true]{csquotes}   % schöne Anführungszeichen in Captions
+\usepackage{url}
+
+% Absätze ohne Einzug, dafür mit vertikalem Abstand
+\usepackage{parskip}
+
+% Float-Kontrolle: bessere Platzierung der Abbildungen
+\usepackage{float}                 % [H]
+\usepackage[section]{placeins}     % \FloatBarrier am Ende jeder Section
+% Mehr Floats pro Seite und weniger Weißraum
+\setcounter{topnumber}{5}
+\setcounter{bottomnumber}{5}
+\setcounter{totalnumber}{10}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.85}
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+\setlength{\floatsep}{10pt plus 2pt minus 2pt}
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+
+% Optional: kompakte Listen
+\usepackage{enumitem}
+\setlist{noitemsep,topsep=2pt}
+
+% Theorem-Umgebung für die drei Regeln (Option C)
+\usepackage{amsthm}
+\newtheorem{definition}{Definition}
+
+% (Optional) Falls deine Grafiken in ./figs/ liegen:
+% \graphicspath{{./}{./figs/}}
+
+\title{Re-Entry Flip-Flop Grids for Event Synchronization:\\
+A Theoretical Framework}
+\author{Lukas Jakubczyk und ???}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+% ---------------- ABSTRACT ----------------
+\begin{abstract}
+We introduce \textit{Re-Entry Flip-Flop Grids} (RFFGs) as a novel framework for decentralized event synchronization across multiple independent USB-based signal sources. Unlike classical synchronization methods relying on centralized reference clocks, phase-locked loops (PLLs), or proprietary USB hardware extensions, RFFGs achieve \textit{emergent, swarm-like convergence} through recursive logical feedback. The approach draws inspiration from Spencer-Brown’s \textit{Laws of Form} and its concept of Re-Entry, and is conceptually related to oscillator synchronization models (Kuramoto-type, pulse-coupled oscillators) and distributed consensus algorithms.
+Simulation results for ten input channels show robust lock-time convergence (mean $\approx$3024 bits, $\sigma \approx 3.5$ bits) without chaotic divergence. While unsuitable for raw high-speed bitstreams, RFFGs effectively synchronize discrete events (edges, triggers, packet boundaries) extracted from such data. This makes them complementary to existing methods: whereas PLLs and USB-inSync hardware achieve nanosecond precision at the bit level, RFFGs provide a scalable, cost-effective \textit{event-level} synchronization layer.
+Building on our previous Late-Breaking Abstract (UCNC~2025) that highlighted the structural collapse of naïve threshold-driven grids, we now demonstrate how the three Re-Entry rules -- Stability, Adjustment, Oscillation -- overcome these limitations. By reframing Re-Entry as a distributed synchronization principle, RFFGs extend self-organizing synchronization into digital logic and open new perspectives for applications such as multi-oscilloscope automotive diagnostics.
+\end{abstract}
+
+% ---------------- INTRODUCTION ----------------
+\section{Introduction}
+Synchronization across multiple devices is a long-standing challenge in engineering. Establishing a common temporal frame is essential for causality, data integrity, and multi-device analysis. Traditional approaches rely on centralized master clocks, hardware triggers, or phase-locked loops (PLLs)~[2]. While precise, these solutions introduce scalability limits, cost overhead, and vulnerability to single-point failures.
+
+In the domain of USB-based instrumentation, similar challenges persist: host-driven scheduling prevents native multi-device alignment. Proprietary solutions like USB-inSync achieve $\pm 5$\,ns synchronization across up to 127 devices~[6], but require specialized hardware. Software approaches exploiting USB~3.0 timestamp packets can reach $\sim$280\,ns accuracy without additional hardware~[7], yet remain tied to protocol-specific mechanisms.
+
+We propose an alternative: \textit{Re-Entry Flip-Flop Grids} (RFFGs), a purely logical, distributed synchronization method. Inspired by emergent synchronization phenomena in physics and biology~[8,9] and by Spencer-Brown’s notion of Re-Entry~[1], RFFGs align discrete events through recursive feedback among simple logic units.
+
+This paper (i) situates RFFGs within the broader landscape of synchronization models, (ii) formalizes the three Re-Entry rules, (iii) presents simulation results for ten-channel synchronization, and (iv) discusses applications in automotive multi-oscilloscope diagnostics.
+
+% ---------------- BACKGROUND ----------------
+\section{Background}
+
+\subsection{Classical synchronization}
+Centralized synchronization methods include PLLs, master clocks, and standardized protocols (e.g., MIDI)~[2]. While widely used, they scale poorly when many devices must be coordinated, as each additional device increases hardware complexity and wiring overhead. In USB contexts, dedicated synchronization hardware (e.g., USB-inSync~[6]) or protocol-specific software techniques~[7] can mitigate this, but always depend on external timing structures.
+
+\subsection{Emergent synchronization}
+In contrast, emergent synchronization arises spontaneously in networks of interacting units. The Kuramoto model describes how coupled oscillators with heterogeneous natural frequencies can converge to a common phase~[8]. Mirollo and Strogatz formalized synchronization among pulse-coupled oscillators, proving that large ensembles of simple units can synchronize without central coordination~[9]. Comparable principles appear in biological systems (firefly flashing, cardiac pacemaker cells). In engineering, distributed consensus algorithms embody similar logic: nodes iteratively adjust local states based on neighbors until convergence~[10]. RFFGs can be viewed as a discrete, logic-based instantiation of these principles tailored to event synchronization.
+
+\subsection{Re-Entry and \textit{Laws of Form}}
+Spencer-Brown’s \textit{Laws of Form}~[1] introduced Re-Entry as self-reference within logical systems. While largely philosophical, there are historical engineering precedents: Spencer-Brown reportedly built a railway wagon counter based on flip-flop-like logic~[4], and Varela later developed Re-Entry as a systems-theoretical model of cognition~[11]. Our previous Late-Breaking Abstract at UCNC~2025~[5] showed that naïve threshold-driven grids collapse rapidly into homogeneous states, which motivated the explicit Re-Entry rules developed here.
+
+% ---------------- RFFG FRAMEWORK ----------------
+\section{Re-Entry Flip-Flop Grids (RFFGs)}
+RFFGs consist of interconnected logical units (flip-flops) arranged in a directed graph. 
+Each node $i$ processes input events $x_i(t)$ and neighbor feedback $S_i(t)$.
+Synchronization emerges from recursive update rules inspired by Spencer-Brown’s notion of Re-Entry.
+
+\begin{definition}[Re-Entry Update Rules]
+Let $W>0$ denote the lock window, $\text{step}>0$ the incremental adjustment, and 
+let $\mathrm{consensus}(t)$ be the current cycle-wide consensus.
+For conflict detection we apply a largest-gap criterion with separation $>2W{+}\delta$ persisting for $L$ cycles.  
+The update $y_i(t{+}1) = f\!\big(x_i(t),S_i(t)\big)$ follows three rules:
+
+\begin{enumerate}[label=\textbf{R\arabic*}, leftmargin=1.8em]
+  \item \textbf{Stability:}  
+  If $\lvert x_i(t)-\mathrm{consensus}(t)\rvert \leq W$, then  
+  $y_i(t{+}1) \gets \mathrm{consensus}(t)$.
+
+  \item \textbf{Adjustment:}  
+  If $x_i(t)>\mathrm{consensus}(t)+W$, set $x_i(t{+}1)\gets x_i(t)-\text{step}$.  
+  If $x_i(t)<\mathrm{consensus}(t)-W$, set $x_i(t{+}1)\gets x_i(t)+\text{step}$.
+
+  \item \textbf{Oscillation:}  
+  If a bimodal split persists for $L$ consecutive cycles, toggle the involved group(s):  
+  $y_i(t{+}1) \gets \lnot y_i(t)$.
+\end{enumerate}
+\end{definition}
+
+% ---------------- SIMULATION ----------------
+\section{Simulation and Results}
+We implemented a discrete-time simulation with ten input channels, each initialized randomly within \mbox{3018--3029} bits. A lock-time window $W=\pm 5$\,bits was defined, and grid dynamics evolved over 500 cycles. 
+
+To evaluate the three Re-Entry rules, we conducted four representative test cases (T1–T4). 
+% Hinweis: Benenne die Bilddateien ohne Leerzeichen/Klammern um (z. B. ..._histogram.pdf)
+
+\subsection*{T1: Random initialization}
+All channels were initialized uniformly in the range 3018--3029 bits.  
+Figure~\ref{fig:T1_hist} shows that the initially broad distribution collapses rapidly into a narrow Gaussian ($\mu \approx 3024$, $\sigma \approx 3.5$). This demonstrates the baseline convergence property of the grid.
+
+\begin{figure}[htbp!]
+  \centering
+  \includegraphics[width=0.75\linewidth]{T1_random_sync_histogram.pdf}
+  \caption{\enquote{Random initialization}: The broad distribution converges toward $\mu \approx 3024$ within 500 cycles.}
+  \label{fig:T1_hist}
+\end{figure}
+
+\subsection*{T2: Two conflicting peaks}
+Channels were initialized in two separated clusters.  
+Figure~\ref{fig:T2_hist} illustrates how the two peaks gradually merge into a common attractor ($\mu \approx 3024$, $\sigma \approx 4.2$). This validates Rule~2 (Adjustment), where outliers are pulled toward consensus.
+
+\begin{figure}[htbp!]
+  \centering
+  \includegraphics[width=0.75\linewidth]{T2_twopeaks_sync_histogram.pdf}
+  \caption{\enquote{Two initial clusters}: The grid resolves conflict by converging toward a single attractor.}
+  \label{fig:T2_hist}
+\end{figure}
+
+\subsection*{T3: All channels outside lock window}
+All inputs were placed outside the initial $W=\pm5$\,bits window.  
+As shown in Figure~\ref{fig:T3_hist}, the system still converges robustly to the global attractor. This demonstrates resilience of the grid under extreme initialization.
+
+\begin{figure}[htbp!]
+  \centering
+  \includegraphics[width=0.75\linewidth]{T3_alloutside_sync_histogram.pdf}
+  \caption{\enquote{All inputs outside}: The system still synchronizes to the global consensus.}
+  \label{fig:T3_hist}
+\end{figure}
+
+\subsection*{T4: Oscillatory conflict resolution}
+To probe Rule~3 (Oscillation), we initialized persistent conflicts.  
+Figure~\ref{fig:T4_hist} shows that instead of collapsing into deadlock, the grid enters bounded oscillations around the consensus. Additional temporal/phase plots (Appendix~A) confirm the oscillatory trajectories before stabilization.
+
+\begin{figure}[htbp!]
+  \centering
+  \includegraphics[width=0.75\linewidth]{T4_oscillation_demo_histogram.pdf}
+  \caption{\enquote{Oscillation regime}: Conflicts induce bounded oscillations that prevent collapse and sustain convergence.}
+  \label{fig:T4_hist}
+\end{figure}
+
+\subsection*{Summary}
+Across all cases, RFFGs consistently synchronized channels to a robust attractor near $\mu \approx 3024$ bits. Unlike the collapse observed in earlier threshold-only grids~\cite{lba2025}, the explicit Re-Entry rules stabilized dynamics, resolved conflicts, and avoided deadlock.
+
+% ---------------- DISCUSSION ----------------
+\section{Discussion}
+RFFGs demonstrate that decentralized, logic-based synchronization is feasible. Compared with classical PLL-based or hardware USB synchronization:
+
+\textbf{Advantages:}
+\begin{itemize}
+  \item no central master clock required,
+  \item scalable beyond typical hardware limits (e.g., $>7$ oscilloscopes)~[3],
+  \item cost-effective software realization at the event layer.
+\end{itemize}
+
+\textbf{Limitations:}
+\begin{itemize}
+  \item event-level only (not continuous bitstreams),
+  \item convergence slower than hardware PLLs,
+  \item precision bounded by event timing resolution (edges, packets, triggers).
+\end{itemize}
+
+Thus, RFFGs are complementary rather than competitive with nanosecond-precision, bit-level methods.
+
+% ---------------- OUTLOOK ----------------
+\section{Outlook}
+Future work will explore FPGA/ASIC implementations to reduce latency and test RFFGs under real-world measurement conditions. Automotive diagnostics present an immediate application: synchronizing 10+ oscilloscopes for multi-sensor event analysis. More broadly, RFFGs extend the notion of emergent synchronization into digital logic, potentially impacting distributed measurement, sensor networks, and unconventional computation.
+
+% ---------------- CONCLUSION ----------------
+\section{Conclusion}
+Re-Entry Flip-Flop Grids offer a theoretically grounded, practically promising approach to event synchronization. By embedding Re-Entry principles into logic networks, they bridge ideas from formal logic, emergent dynamics, and engineering practice. The combination of robust convergence, scalability, and conceptual originality positions RFFGs as a novel contribution to synchronization research.
+
+% ---------------- APPENDIX ----------------
+\appendix
+\section*{Appendix A: Phase and Temporal Plots}
+
+For completeness, we include detailed phase alignment and temporal evolution plots for each test case.
+% Hinweis: Benenne die Dateien entsprechend (ohne Leerzeichen/Klammern)
+
+\begin{figure}[htbp!]
+  \centering
+  \includegraphics[width=0.75\linewidth]{T1_random_sync_phase.pdf}\\[4pt]
+  \includegraphics[width=0.75\linewidth]{T1_random_sync_temporal.pdf}
+  \caption{T1 -- Phase alignment and temporal evolution.}
+\end{figure}
+
+\begin{figure}[htbp!]
+  \centering
+  \includegraphics[width=0.75\linewidth]{T2_twopeaks_sync_phase.pdf}\\[4pt]
+  \includegraphics[width=0.75\linewidth]{T2_twopeaks_sync_temporal.pdf}
+  \caption{T2 -- Phase alignment and temporal evolution.}
+\end{figure}
+
+\begin{figure}[htbp!]
+  \centering
+  \includegraphics[width=0.75\linewidth]{T3_alloutside_sync_phase.pdf}
+  \caption{T3 -- Phase alignment. Temporal evolution omitted for brevity.}
+\end{figure}
+
+\begin{figure}[htbp!]
+  \centering
+  \includegraphics[width=0.75\linewidth]{T4_oscillation_demo_phase.pdf}\\[4pt]
+  \includegraphics[width=0.75\linewidth]{T4_oscillation_demo_temporal.pdf}
+  \caption{T4 -- Oscillatory trajectories confirming bounded oscillations.}
+\end{figure}
+
+% ---------------- REFERENCES ----------------
+\begin{thebibliography}{99}
+\setlength{\itemsep}{2pt}
+
+\bibitem{lof1969}
+G.~Spencer-Brown, \emph{Laws of Form}. Allen \& Unwin, 1969.
+
+\bibitem{midi1996}
+MIDI Manufacturers Association, \emph{MIDI 1.0 Detailed Specification}, 1996.
+
+\bibitem{banaschewski1977}
+B.~Banaschewski, ``On G. Spencer-Brown's Laws of Form,'' \emph{Notre Dame Journal of Formal Logic}, 18(3):520--529, 1977.
+
+\bibitem{vonmeier2025}
+K.~von Meier, ``Spencer-Brown's wagon counting device,'' \emph{AUM Conference Transcript}, 2025. % add URL/DOI if available
+
+\bibitem{lba2025}
+G.~Kortenbruck and L.~Jakubczyk, ``Structural Limits of Threshold-Driven Logic Grids,'' \emph{UCNC 2025 Late-Breaking Abstracts}, Nice, 2025.
+
+\bibitem{usbinsync2019}
+ChronoLogic / Fiberbyte, ``USB-inSync Technology Whitepaper,'' 2019. % add URL if desired
+
+\bibitem{lim2016}
+D.~Lim, ``Software-based synchronization of USB 3.0 devices using timestamp packets,'' in \emph{Proc. IEEE ISCAS}, 2016.
+
+\bibitem{kuramoto1975}
+Y.~Kuramoto, ``Self-entrainment of a population of coupled nonlinear oscillators,'' in \emph{International Symposium on Mathematical Problems in Theoretical Physics}, 1975.
+
+\bibitem{mirollo1990}
+R.~E. Mirollo and S.~H. Strogatz, ``Synchronization of pulse-coupled biological oscillators,'' \emph{SIAM Journal on Applied Mathematics}, 50(6):1645--1662, 1990.
+
+\bibitem{olfati2007}
+R.~Olfati-Saber, J.~A. Fax, and R.~M. Murray, ``Consensus and cooperation in networked multi-agent systems,'' \emph{Proceedings of the IEEE}, 95(1):215--233, 2007.
+
+\bibitem{varela1979}
+F.~J. Varela, \emph{Principles of Biological Autonomy}. North Holland, 1979.
+
+\end{thebibliography}
+
+\end{document}
