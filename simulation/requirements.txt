@@ -1,0 +1,4 @@
+# RFFG.sim.py requirements
+numpy>=1.22,<3.0
+matplotlib>=3.7,<4.0
+
