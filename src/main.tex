@@ -41,6 +41,11 @@
 % (Optional) Falls deine Grafiken in ./figs/ liegen:
 % \graphicspath{{./}{./figs/}}
 
+
+\graphicspath{{build/simulation_results/}}
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+
+
 \title{Re-Entry Flip-Flop Grids for Event Synchronization:\\
 A Theoretical Framework}
 \author{Lukas Jakubczyk und ???}
@@ -118,7 +123,7 @@ Figure~\ref{fig:T1_hist} shows that the initially broad distribution collapses r
 
 \begin{figure}[htbp!]
   \centering
-  \includegraphics[width=0.75\linewidth]{T1_random_sync_histogram.pdf}
+  \includegraphics[width=0.75\linewidth]{T1_random_sync_histogram}
   \caption{\enquote{Random initialization}: The broad distribution converges toward $\mu \approx 3024$ within 500 cycles.}
   \label{fig:T1_hist}
 \end{figure}
@@ -129,7 +134,7 @@ Figure~\ref{fig:T2_hist} illustrates how the two peaks gradually merge into a co
 
 \begin{figure}[htbp!]
   \centering
-  \includegraphics[width=0.75\linewidth]{T2_twopeaks_sync_histogram.pdf}
+  \includegraphics[width=0.75\linewidth]{T2_twopeaks_sync_histogram}
   \caption{\enquote{Two initial clusters}: The grid resolves conflict by converging toward a single attractor.}
   \label{fig:T2_hist}
 \end{figure}
@@ -140,21 +145,21 @@ As shown in Figure~\ref{fig:T3_hist}, the system still converges robustly to the
 
 \begin{figure}[htbp!]
   \centering
-  \includegraphics[width=0.75\linewidth]{T3_alloutside_sync_histogram.pdf}
+  \includegraphics[width=0.75\linewidth]{T3_alloutside_sync_histogram}
   \caption{\enquote{All inputs outside}: The system still synchronizes to the global consensus.}
   \label{fig:T3_hist}
 \end{figure}
 
 \subsection*{T4: Oscillatory conflict resolution}
-To probe Rule~3 (Oscillation), we initialized persistent conflicts.  
-Figure~\ref{fig:T4_hist} shows that instead of collapsing into deadlock, the grid enters bounded oscillations around the consensus. Additional temporal/phase plots (Appendix~A) confirm the oscillatory trajectories before stabilization.
-
 \begin{figure}[htbp!]
   \centering
-  \includegraphics[width=0.75\linewidth]{T4_oscillation_demo_histogram.pdf}
+  \includegraphics[width=0.75\linewidth]{T4_oscillation_demo_histogram}
   \caption{\enquote{Oscillation regime}: Conflicts induce bounded oscillations that prevent collapse and sustain convergence.}
   \label{fig:T4_hist}
 \end{figure}
+To probe Rule~3 (Oscillation), we initialized persistent conflicts.  
+Figure~\ref{fig:T4_hist} shows that instead of collapsing into deadlock, the grid enters bounded oscillations around the consensus. Additional temporal/phase plots (Appendix~A) confirm the oscillatory trajectories before stabilization.
+
 
 \subsection*{Summary}
 Across all cases, RFFGs consistently synchronized channels to a robust attractor near $\mu \approx 3024$ bits. Unlike the collapse observed in earlier threshold-only grids~\cite{lba2025}, the explicit Re-Entry rules stabilized dynamics, resolved conflicts, and avoided deadlock.
@@ -196,28 +201,28 @@ For completeness, we include detailed phase alignment and temporal evolution plo
 
 \begin{figure}[htbp!]
   \centering
-  \includegraphics[width=0.75\linewidth]{T1_random_sync_phase.pdf}\\[4pt]
-  \includegraphics[width=0.75\linewidth]{T1_random_sync_temporal.pdf}
+  \includegraphics[width=0.75\linewidth]{T1_random_sync_phase\\[4pt]
+  \includegraphics[width=0.75\linewidth]{T1_random_sync_temporal}
   \caption{T1 -- Phase alignment and temporal evolution.}
 \end{figure}
 
 \begin{figure}[htbp!]
   \centering
-  \includegraphics[width=0.75\linewidth]{T2_twopeaks_sync_phase.pdf}\\[4pt]
-  \includegraphics[width=0.75\linewidth]{T2_twopeaks_sync_temporal.pdf}
+  \includegraphics[width=0.75\linewidth]{T2_twopeaks_sync_phase}\\[4pt]
+  \includegraphics[width=0.75\linewidth]{T2_twopeaks_sync_temporal}
   \caption{T2 -- Phase alignment and temporal evolution.}
 \end{figure}
 
 \begin{figure}[htbp!]
   \centering
-  \includegraphics[width=0.75\linewidth]{T3_alloutside_sync_phase.pdf}
+  \includegraphics[width=0.75\linewidth]{T3_alloutside_sync_phase}
   \caption{T3 -- Phase alignment. Temporal evolution omitted for brevity.}
 \end{figure}
 
 \begin{figure}[htbp!]
   \centering
-  \includegraphics[width=0.75\linewidth]{T4_oscillation_demo_phase.pdf}\\[4pt]
-  \includegraphics[width=0.75\linewidth]{T4_oscillation_demo_temporal.pdf}
+  \includegraphics[width=0.75\linewidth]{T4_oscillation_demo_phase}\\[4pt]
+  \includegraphics[width=0.75\linewidth]{T4_oscillation_demo_temporal}
   \caption{T4 -- Oscillatory trajectories confirming bounded oscillations.}
 \end{figure}
 

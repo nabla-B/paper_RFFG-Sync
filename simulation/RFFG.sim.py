@@ -5,7 +5,7 @@
 # - Presets: T1, T2, T3, T4 (+ stricter, async)
 # - Improved plots: Histogram (μ/σ + Gaussian-Fit), Temporal (consensus + lock band), Phase (sorted option)
 # - Uniform axes/bins across runs
-# - Exports figures and CSV logs to /mnt/data
+# - Exports figures, CSV logs, and summaries to ../build/simulation_results/
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,6 +13,10 @@ import csv
 from dataclasses import dataclass, asdict
 from typing import Dict, Any, Tuple, List, Optional
 import os
+
+# ---------------------- OUTPUT PATHS ----------------------
+OUTDIR = os.path.join("build", "simulation_results")
+os.makedirs(OUTDIR, exist_ok=True)
 
 # ---------------------- GLOBAL PLOT SETTINGS ----------------------
 HIST_BINS = np.arange(3010, 3036, 1)   # common histogram bin edges
@@ -210,8 +214,8 @@ def run_experiment(params: RFFGParams,
         conflict_persist_hist[t+1] = conflict_state["persist"]
 
     # export CSV log
-    os.makedirs("/mnt/data", exist_ok=True)
-    csv_path = f"/mnt/data/{export_prefix}_log.csv"
+    os.makedirs(OUTDIR, exist_ok=True)
+    csv_path = os.path.join(OUTDIR, f"{export_prefix}_log.csv")
     with open(csv_path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["t", "consensus", "in_window", "conflict_persist"] + [f"x{i}" for i in range(params.N)])
@@ -242,10 +246,10 @@ def plot_histogram_final(X: np.ndarray,
                          fixed_bin_edges: np.ndarray = None,
                          xlim: Tuple[float,float] = None):
     """
-    Final-Histogramm mit:
-      - vertikalen Linien für μ und ±σ,
-      - schattiertem Lock-Fenster (μ±W),
-      - Gaussian-Fit, skaliert auf Histogrammzählungen.
+    Final histogram with:
+      - vertical lines for μ and ±σ,
+      - shaded lock window (μ±W),
+      - Gaussian fit scaled to histogram counts.
     """
     final = X[-1]
     mu = float(np.mean(final))
@@ -324,7 +328,7 @@ def plot_phase_alignment(X: np.ndarray, out_path: str,
         idx = np.arange(len(final))
 
     plt.figure()
-    # Removed 'use_line_collection' argument as it's deprecated/removed in recent matplotlib versions
+    # 'use_line_collection' removed to avoid warnings in recent matplotlib
     plt.stem(idx, dev)
     plt.axhline(0.0)
     dmin, dmax = float(np.min(dev)), float(np.max(dev))
@@ -402,7 +406,7 @@ def run_preset(test_name: str = "T1_random_sync") -> Dict[str, Any]:
         raise ValueError("Unknown test preset")
 
     # export plots (uniform axes/bins)
-    base = f"/mnt/data/{test_name}"
+    base = os.path.join(OUTDIR, test_name)
     plot_histogram_final(result["X"], base + "_histogram.pdf",
                          W=RFFGParams().W, fixed_bin_edges=HIST_BINS, xlim=HIST_XLIM)
     plot_temporal_evolution(result["X"], base + "_temporal.pdf",
@@ -444,11 +448,52 @@ def rerender_histograms_for_all(outputs_list: List[Dict[str, Any]]):
         plot_histogram_final(res["X"], base + "_histogram.pdf",
                              W=RFFGParams().W, fixed_bin_edges=HIST_BINS, xlim=HIST_XLIM)
 
-# ---------------------- DEMO (comment/uncomment as needed) ----------------------
-# outs = [
-#     run_preset("T1_random_sync"),
-#     run_preset("T2_twopeaks_sync"),
-#     run_preset("T3_alloutside_sync"),
-#     run_preset("T4_oscillation_demo"),
-# ]
-# rerender_histograms_for_all(outs)
+# ---------------------- DEMO / CLI ----------------------
+# Supports multiple presets via env:
+#   RFFG_PRESETS="T1_random_sync,T2_twopeaks_sync,T3_alloutside_sync,T4_oscillation_demo"
+# Fallbacks:
+#   - use RFFG_PRESETS if set
+#   - else use RFFG_PRESET (single or comma-separated)
+#   - else run all four defaults
+
+if __name__ == "__main__":
+    # Read env vars
+    presets_env = (
+        os.environ.get("RFFG_PRESETS")
+        or os.environ.get("RFFG_PRESET")
+        or "T1_random_sync,T2_twopeaks_sync,T3_alloutside_sync,T4_oscillation_demo"
+    )
+    preset_names = [p.strip() for p in presets_env.split(",") if p.strip()]
+
+    # Validate names
+    valid_names = {
+        "T1_random_sync",
+        "T2_twopeaks_sync",
+        "T3_alloutside_sync",
+        "T1_random_async",
+        "T4_oscillation_demo",
+        "T4A_more_strict",
+        "T4B_async",
+    }
+    invalid = [p for p in preset_names if p not in valid_names]
+    if invalid:
+        print("[WARN] Invalid preset name(s) ignored:", ", ".join(invalid))
+
+    ran_any = False
+    manifests = []
+
+    for p in preset_names:
+        if p in valid_names:
+            print(f"[INFO] Running preset: {p}")
+            out = run_preset(p)
+            manifests.append(out)  # keep for summary print
+            ran_any = True
+
+    if not ran_any:
+        raise SystemExit("No valid presets to run. Aborting.")
+
+    print("Saved results to:", OUTDIR)
+    for out in manifests:
+        print(f"  - summary: {out['summary_path']}")
+        print(f"  - csv:     {out['csv_path']}")
+

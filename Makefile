@@ -11,18 +11,20 @@ LATEXMK_OPTS = -pdf -bibtex \
 	       -jobname=Sync3000
 
 # ---------------- Simulation / Python ----------------
-SIMDIR   = simulation
-SIMENV   = $(SIMDIR)/env
-SIMPY    = $(SIMENV)/bin/python
-SIMPIP   = $(SIMENV)/bin/pip
-SIMREQ   = $(SIMDIR)/requirements.txt
-SIMSCRIPT= $(SIMDIR)/RFFG.sim.py
+SIMDIR    = simulation
+SIMENV    = $(SIMDIR)/env
+SIMPY     = $(SIMENV)/bin/python
+SIMPIP    = $(SIMENV)/bin/pip
+SIMREQ    = $(SIMDIR)/requirements.txt
+SIMSCRIPT = $(SIMDIR)/RFFG.sim.py
+SIMSTAMP  = $(SIMDIR)/.sim.ok   # stamp file to indicate the simulation ran successfully
 
 .PHONY: all draft clean sim
 
 all: $(PDF)
 
-$(PDF): $(TEXSRCS)
+# Make the PDF depend on the simulation stamp, so simulation runs first (when needed)
+$(PDF): $(SIMSTAMP) $(TEXSRCS)
 	latexmk -f -gg $(LATEXMK_OPTS) $(SRC)
 
 # ---- Create Python virtual environment if it does not exist
@@ -35,9 +37,15 @@ $(SIMENV)/.deps: $(SIMREQ) | $(SIMPY)
 	$(SIMPIP) install -r $(SIMREQ)
 	touch $(SIMENV)/.deps
 
-# ---- Run the simulation: ensure venv, install deps, execute script
-sim: $(SIMENV)/.deps
+# ---- Run the simulation and write a stamp when successful
+# Re-run if requirements or the simulation script changed, or if the stamp is missing
+$(SIMSTAMP): $(SIMENV)/.deps $(SIMSCRIPT)
 	$(SIMPY) $(SIMSCRIPT)
+	touch $(SIMSTAMP)
+
+# Convenience target to run only the simulation
+sim: $(SIMSTAMP)
+	@echo "Simulation done -> $(SIMSTAMP)"
 
 clean:
 	latexmk -c $(SRC)
