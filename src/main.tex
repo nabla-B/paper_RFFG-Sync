@@ -63,6 +63,18 @@ Building on our previous Late-Breaking Abstract (UCNC~2025) that highlighted the
 
 % ---------------- INTRODUCTION ----------------
 \section{Introduction}
+One reason to use digital oscilloscopes or similar data-recorders is the reconstruction of physical events, that generate or influence electical signals.
+Possible examples for this include fault detection in electical systems, electrical characterization of sensors, event reconstruction in experimental physics or triggering of other data-recording devices.
+Different modes of analysis operation can be distinguished:
+\begin{itemize}
+    \item \textbf{Real-time analysis:} Immediate processing of incoming data streams for live monitoring and control.
+    \item \textbf{Post-processing:} Offline analysis of recorded data for detailed examination and validation.
+    \item \textbf{Event-triggered analysis:} Activation of data recording and analysis based on specific signal events or thresholds.
+\end{itemize}
+Furthermore, it has to be taken into account, whether the analysis requires one channel or multiple channels.
+When looking at multiple channels, it can be necessary to correlate events across these channels, which adds another layer of complexity the the data-acquisition and analysis chain.
+
+Without going into too much philosophical detail, synchronization and even the definition of synchonous events 
 Synchronization across multiple devices is a long-standing challenge in engineering. Establishing a common temporal frame is essential for causality, data integrity, and multi-device analysis. Traditional approaches rely on centralized master clocks, hardware triggers, or phase-locked loops (PLLs)~[2]. While precise, these solutions introduce scalability limits, cost overhead, and vulnerability to single-point failures.
 
 In the domain of USB-based instrumentation, similar challenges persist: host-driven scheduling prevents native multi-device alignment. Proprietary solutions like USB-inSync achieve $\pm 5$\,ns synchronization across up to 127 devices~[6], but require specialized hardware. Software approaches exploiting USB~3.0 timestamp packets can reach $\sim$280\,ns accuracy without additional hardware~[7], yet remain tied to protocol-specific mechanisms.
